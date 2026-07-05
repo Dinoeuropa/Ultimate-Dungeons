@@ -1,0 +1,46 @@
+name: Mobile PWA Build
+
+on:
+  push:
+    branches: [main, "cursor/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build mobile shell
+        run: npm run build
+
+      - name: Upload static export
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-out
+          path: mobile/out
+
+  verify-game-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify game binary exists
+        run: |
+          test -f game/assets/js/binary.js
+          test -f mobile/public/game/js/binary.js
+          echo "Game assets present"

@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+dist/
+.DS_Store
+*.log
+.env*
+mobile/.next/
+mobile/out/
+mobile/android/
+mobile/ios/
+.cursor/

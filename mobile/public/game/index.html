@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+    <title>Ultimate Dungeons</title>
+    <script type="text/javascript" src="./js/loader.js"></script>
+    <script type="text/javascript" src="./js/custom.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #0b0612;
+            overflow: hidden;
+        }
+
+        iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body id="root">
+    <div id="loader" class="lds-ripple">
+        <div></div>
+        <div></div>
+    </div>
+    <iframe id="simframe" allowfullscreen="allowfullscreen"
+        sandbox="allow-popups allow-forms allow-scripts allow-same-origin">
+    </iframe>
+    <script type="text/javascript">
+        makeCodeRun({ js: "./js/binary.js" });
+    </script>
+</body>
+</html>
