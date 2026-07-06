@@ -518,6 +518,38 @@ button {
   z-index: 45;
 }
 
+.tutorial-overlay {
+  align-items: center;
+  background: rgba(10, 6, 18, 0.88);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 1rem;
+  position: fixed;
+  z-index: 60;
+}
+
+.tutorial-overlay__panel {
+  background: rgba(24, 14, 38, 0.98);
+  border: 1px solid rgba(155, 89, 217, 0.45);
+  border-radius: 1rem;
+  color: #f4ecff;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  max-width: 28rem;
+  padding: 1.5rem;
+}
+
+.tutorial-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1rem 0 1.25rem;
+  padding-left: 1.1rem;
+}
+
+.mobile-hud__stat--endless {
+  color: #7ee787;
+}
+
 @media (max-width: 720px) {
   .mobile-hud {
     flex-wrap: wrap;

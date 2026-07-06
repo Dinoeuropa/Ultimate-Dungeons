@@ -14,6 +14,7 @@ type MobileHUDProps = {
   bossName?: string | null;
   bossHp?: number | null;
   bossMaxHp?: number | null;
+  endlessUnlocked?: boolean;
   onPause: () => void;
 };
 
@@ -36,6 +37,7 @@ export function MobileHUD({
   bossName,
   bossHp,
   bossMaxHp,
+  endlessUnlocked,
   onPause,
 }: MobileHUDProps) {
   if (!visible) return null;
@@ -54,6 +56,11 @@ export function MobileHUD({
         <div className="mobile-hud__stat mobile-hud__stat--gold">
           Bonus {timeBonus}
         </div>
+        {endlessUnlocked && (
+          <div className="mobile-hud__stat mobile-hud__stat--endless">
+            Endless
+          </div>
+        )}
       </div>
 
       <div className="mobile-hud__meters">

@@ -16,12 +16,21 @@ import { findPath } from "../algorithms/astar";
 import {
   BossType,
   ControlState,
+  Difficulty,
   Direction,
   DungeonData,
   GameSnapshot,
   GridPos,
   TileType,
 } from "../types";
+import {
+  playDoorSfx,
+  playFloorSfx,
+  playHitSfx,
+  playMeleeSfx,
+  playPickupSfx,
+  playRangedSfx,
+} from "../sfx";
 
 type EnemyObj = {
   container: Phaser.GameObjects.Container;
@@ -60,6 +69,8 @@ export class DungeonScene extends Phaser.Scene {
     stamina?: number;
     dailySeed?: number;
     carryHp?: boolean;
+    difficulty?: Difficulty;
+    soundEnabled?: boolean;
   } | null = null;
 
   private callbacks: GameCallbacks = {
@@ -108,6 +119,8 @@ export class DungeonScene extends Phaser.Scene {
   private bossType: BossType = null;
   private dailySeed?: number;
   private carryHp = true;
+  private difficulty: Difficulty = "normal";
+  private soundEnabled = true;
 
   private fxLayer!: Phaser.GameObjects.Container;
   private worldLayer!: Phaser.GameObjects.Container;
@@ -126,6 +139,8 @@ export class DungeonScene extends Phaser.Scene {
     stamina?: number;
     dailySeed?: number;
     carryHp?: boolean;
+    difficulty?: Difficulty;
+    soundEnabled?: boolean;
   }) {
     const pending = DungeonScene.pendingConfig;
     const merged = { ...pending, ...data };
@@ -136,6 +151,8 @@ export class DungeonScene extends Phaser.Scene {
     this.stamina = merged.stamina ?? PLAYER.maxStamina;
     this.dailySeed = merged.dailySeed;
     this.carryHp = merged.carryHp ?? true;
+    this.difficulty = merged.difficulty ?? "normal";
+    this.soundEnabled = merged.soundEnabled ?? true;
     if (!this.carryHp) this.hp = PLAYER.maxHp;
     DungeonScene.pendingConfig = null;
   }
@@ -200,7 +217,27 @@ export class DungeonScene extends Phaser.Scene {
     this.createPlayer();
     this.spawnEnemies();
     this.generating = false;
+    playFloorSfx(this.soundEnabled);
     this.emitSnapshot();
+  }
+
+  private difficultyMultiplier(): number {
+    if (this.difficulty === "easy") return 0.75;
+    if (this.difficulty === "hard") return 1.35;
+    return 1;
+  }
+
+  private staminaRegenInterval(): number {
+    if (this.difficulty === "easy") return PLAYER.staminaRegenMs / 2;
+    if (this.difficulty === "hard") return PLAYER.staminaRegenMs * 1.5;
+    return PLAYER.staminaRegenMs;
+  }
+
+  private touchChance(): number {
+    const base = GHOST.touchChance;
+    if (this.difficulty === "easy") return base * 0.5;
+    if (this.difficulty === "hard") return Math.min(0.5, base * 1.6);
+    return base;
   }
 
   private getBossType(): BossType {
@@ -391,7 +428,7 @@ export class DungeonScene extends Phaser.Scene {
 
     if (this.stamina < PLAYER.maxStamina) {
       this.staminaRegenTimer += delta;
-      if (this.staminaRegenTimer >= PLAYER.staminaRegenMs) {
+      if (this.staminaRegenTimer >= this.staminaRegenInterval()) {
         this.stamina = Math.min(PLAYER.maxStamina, this.stamina + 1);
         this.staminaRegenTimer = 0;
       }
@@ -460,6 +497,7 @@ export class DungeonScene extends Phaser.Scene {
   private performMelee() {
     this.stamina -= PLAYER.meleeCost;
     this.meleeCooldown = PLAYER.meleeCooldownMs;
+    playMeleeSfx(this.soundEnabled);
     const reach = 22;
     const offsets: Record<Direction, { x: number; y: number }> = {
       up: { x: 0, y: -reach },
@@ -488,6 +526,7 @@ export class DungeonScene extends Phaser.Scene {
   private performRanged() {
     this.stamina -= PLAYER.rangedCost;
     this.rangedCooldown = PLAYER.rangedCooldownMs;
+    playRangedSfx(this.soundEnabled);
     const speed = PLAYER.projectileSpeed;
     let vx = 0;
     let vy = 0;
@@ -532,7 +571,7 @@ export class DungeonScene extends Phaser.Scene {
           const next = path[1];
           const tx = next.x * TILE_SIZE + TILE_SIZE / 2;
           const ty = next.y * TILE_SIZE + TILE_SIZE / 2;
-          const speed = ((enemy.isBoss ? 60 : GHOST.chaseSpeed) * delta) / 1000;
+          const speed = (((enemy.isBoss ? 60 : GHOST.chaseSpeed) * this.difficultyMultiplier()) * delta) / 1000;
           const angle = Phaser.Math.Angle.Between(container.x, container.y, tx, ty);
           const nx = container.x + Math.cos(angle) * speed;
           const ny = container.y + Math.sin(angle) * speed;
@@ -553,7 +592,7 @@ export class DungeonScene extends Phaser.Scene {
       if (dist < 14 && this.invulnTimer <= 0) {
         if (this.blocking) {
           this.stamina = Math.max(0, this.stamina - PLAYER.blockStaminaCost);
-        } else if (Math.random() < GHOST.touchChance) {
+        } else if (Math.random() < this.touchChance()) {
           const dmg = enemy.isBoss
             ? BOSSES[enemy.bossType!].touchDamage
             : GHOST.touchDamage;
@@ -647,6 +686,7 @@ export class DungeonScene extends Phaser.Scene {
     this.hp = Math.max(0, this.hp - amount);
     this.invulnTimer = 800;
     this.cameras.main.shake(120, 0.008);
+    playHitSfx(this.soundEnabled);
     this.spawnDamageNumber(this.player.x, this.player.y - 14, amount, COLORS.hp);
     if (this.hp <= 0) {
       this.callbacks.onGameOver(this.score);
@@ -666,6 +706,7 @@ export class DungeonScene extends Phaser.Scene {
     // Open exit once all enemies are defeated.
     if (this.dungeon.tiles[this.dungeon.door.y][this.dungeon.door.x] === TILE.DOOR_CLOSED) {
       this.setTile(this.dungeon.door.x, this.dungeon.door.y, TILE.DOOR_OPEN);
+      playDoorSfx(this.soundEnabled);
       return;
     }
 
@@ -694,6 +735,7 @@ export class DungeonScene extends Phaser.Scene {
       );
       if (dist < 12) {
         this.hp = Math.min(PLAYER.maxHp, this.hp + PICKUP.healAmount);
+        playPickupSfx(this.soundEnabled);
         pickup.destroy();
         this.pickups = this.pickups.filter((p) => p !== pickup);
         this.spawnRingFx(pickup.x, pickup.y, COLORS.heal);
@@ -794,6 +836,7 @@ export class DungeonScene extends Phaser.Scene {
       bossName: boss?.bossType ? BOSSES[boss.bossType].name : null,
       bossHp: boss?.hp ?? null,
       bossMaxHp: boss?.maxHp ?? null,
+      endlessUnlocked: this.floor > 11,
     });
   }
 }
@@ -808,6 +851,8 @@ export function createPhaserGame(
     stamina?: number;
     dailySeed?: number;
     carryHp?: boolean;
+    difficulty?: Difficulty;
+    soundEnabled?: boolean;
   },
 ): Phaser.Game {
   DungeonScene.pendingConfig = { callbacks, ...options };

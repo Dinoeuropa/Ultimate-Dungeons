@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PhaserGame } from "@/game/PhaserGame";
 import { GameCallbacks } from "@/game/scenes/DungeonScene";
-import { ControlButton, triggerCapacitorHaptic } from "@/lib/game-bridge";
+import { ControlButton } from "@/lib/game-bridge";
+import { triggerHaptic } from "@/lib/haptics";
+import { Difficulty } from "@/game/types";
 import { ControlState, EMPTY_CONTROLS, GameSnapshot } from "@/game/types";
 import { ActionButtons } from "./ActionButtons";
 import { PauseMenu } from "./PauseMenu";
@@ -13,6 +15,9 @@ type StandaloneGameProps = {
   active: boolean;
   paused: boolean;
   dailySeed?: number;
+  difficulty?: Difficulty;
+  soundEnabled?: boolean;
+  hapticsEnabled?: boolean;
   continueRun?: {
     floor: number;
     score: number;
@@ -30,6 +35,9 @@ export function StandaloneGame({
   active,
   paused,
   dailySeed,
+  difficulty = "normal",
+  soundEnabled = true,
+  hapticsEnabled = true,
   continueRun,
   onReady,
   onStateChange,
@@ -62,20 +70,24 @@ export function StandaloneGame({
     [],
   );
 
+  const bump = useCallback(() => {
+    void triggerHaptic(hapticsEnabled);
+  }, [hapticsEnabled]);
+
   const setDirection = useCallback((button: ControlButton, pressed: boolean) => {
     if (paused) return;
     setControls((prev) => ({
       ...prev,
       [button]: pressed,
     }));
-    if (pressed) void triggerCapacitorHaptic();
-  }, [paused]);
+    if (pressed) bump();
+  }, [bump, paused]);
 
   const setAction = useCallback((key: "melee" | "ranged" | "block", pressed: boolean) => {
     if (paused) return;
     setControls((prev) => ({ ...prev, [key]: pressed }));
-    if (pressed) void triggerCapacitorHaptic();
-  }, [paused]);
+    if (pressed) bump();
+  }, [bump, paused]);
 
   useEffect(() => {
     if (!active) {
@@ -95,6 +107,8 @@ export function StandaloneGame({
         callbacks={callbacks}
         dailySeed={dailySeed}
         continueRun={continueRun}
+        difficulty={difficulty}
+        soundEnabled={soundEnabled}
       />
 
       <VirtualDpad visible={!paused} onDirection={setDirection} />

@@ -1,4 +1,4 @@
-const CACHE_NAME = "ultimate-dungeons-v2";
+const CACHE_NAME = "ultimate-dungeons-v3";
 const BASE = self.location.pathname.replace(/sw\.js$/, "");
 
 const APP_SHELL = [

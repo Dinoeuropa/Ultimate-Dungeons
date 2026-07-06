@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Phaser from "phaser";
-import { ControlState } from "@/game/types";
+import { ControlState, Difficulty } from "@/game/types";
 import {
   createPhaserGame,
   GameCallbacks,
@@ -21,6 +21,8 @@ type PhaserGameProps = {
     hp: number;
     stamina: number;
   } | null;
+  difficulty?: Difficulty;
+  soundEnabled?: boolean;
 };
 
 export function PhaserGame({
@@ -30,6 +32,8 @@ export function PhaserGame({
   callbacks,
   dailySeed,
   continueRun,
+  difficulty = "normal",
+  soundEnabled = true,
 }: PhaserGameProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -59,6 +63,8 @@ export function PhaserGame({
       stamina: continueStamina,
       dailySeed,
       carryHp: hasContinue,
+      difficulty,
+      soundEnabled,
     });
 
     return () => {

@@ -10,6 +10,7 @@ import { MobileHUD } from "@/components/MobileHUD";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { SplashScreen } from "@/components/SplashScreen";
 import { StandaloneGame } from "@/components/StandaloneGame";
+import { TutorialOverlay } from "@/components/TutorialOverlay";
 import {
   addHighScore,
   clearSave,
@@ -52,6 +53,7 @@ export function GameApp() {
   const [dailySeed, setDailySeed] = useState<number | undefined>(undefined);
   const [continueRun, setContinueRun] = useState<SaveData | null>(null);
   const [finalScore, setFinalScore] = useState(0);
+  const [showTutorial, setShowTutorial] = useState(false);
   const [showPortraitWarning, setShowPortraitWarning] = useState(false);
 
   const dailySeedLabel = useMemo(() => getDailySeed(), []);
@@ -67,6 +69,27 @@ export function GameApp() {
       ).catch(() => undefined);
     }
   }, []);
+
+  useEffect(() => {
+    let remove: (() => void) | undefined;
+
+    void import("@capacitor/app")
+      .then(({ App }) =>
+        App.addListener("backButton", () => {
+          if (screen === "game") {
+            setPaused(true);
+          } else if (screen !== "menu" && screen !== "splash") {
+            setScreen("menu");
+          }
+        }),
+      )
+      .then((handle) => {
+        remove = () => void handle.remove();
+      })
+      .catch(() => undefined);
+
+    return () => remove?.();
+  }, [screen]);
 
   useEffect(() => {
     const updateOrientation = () => {
@@ -149,6 +172,7 @@ export function GameApp() {
     }
     setSessionBest(0);
     setPaused(false);
+    setShowTutorial(settings.showTutorialOnStart && mode === "new");
     setScreen("game");
   };
 
@@ -236,13 +260,21 @@ export function GameApp() {
             bossName={gameState?.bossName}
             bossHp={gameState?.bossHp}
             bossMaxHp={gameState?.bossMaxHp}
+            endlessUnlocked={gameState?.endlessUnlocked}
             onPause={() => setPaused(true)}
+          />
+          <TutorialOverlay
+            visible={showTutorial && !paused}
+            onDismiss={() => setShowTutorial(false)}
           />
           <StandaloneGame
             active
-            paused={paused}
+            paused={paused || showTutorial}
             dailySeed={dailySeed}
             continueRun={continueRun}
+            difficulty={settings.difficulty}
+            soundEnabled={settings.soundEnabled}
+            hapticsEnabled={settings.hapticsEnabled}
             onReady={() => undefined}
             onStateChange={handleStateChange}
             onGameOver={handleGameOver}

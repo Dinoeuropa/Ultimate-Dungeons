@@ -22,6 +22,8 @@ export interface DungeonData {
   enemySpawns: GridPos[];
 }
 
+export type Difficulty = "easy" | "normal" | "hard";
+
 export interface GameSnapshot {
   floor: number;
   score: number;
@@ -35,6 +37,7 @@ export interface GameSnapshot {
   bossName: string | null;
   bossHp: number | null;
   bossMaxHp: number | null;
+  endlessUnlocked: boolean;
 }
 
 export interface ControlState {
