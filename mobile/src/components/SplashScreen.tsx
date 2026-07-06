@@ -10,7 +10,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
       <div className="splash-screen__content">
         <p className="splash-screen__eyebrow">Retro Arcade</p>
         <h1>Ultimate Dungeons</h1>
-        <p>Procedural dungeons. Ghosts. Bosses. One hero.</p>
+        <p>Procedural dungeons. Spirits. Bosses. Built for mobile.</p>
         <button type="button" className="primary-btn" onClick={onComplete}>
           Enter
         </button>

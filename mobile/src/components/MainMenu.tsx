@@ -33,8 +33,8 @@ export function MainMenu({
         <p className="main-menu__eyebrow">Mobile Edition</p>
         <h1>Ultimate Dungeons</h1>
         <p className="main-menu__tagline">
-          Clear procedurally generated floors, defeat ghosts, and survive three boss
-          encounters.
+          A standalone retro dungeon crawler with procedural floors, upgraded combat,
+          and epic boss encounters — no plugins required.
         </p>
 
         <div className="main-menu__actions">

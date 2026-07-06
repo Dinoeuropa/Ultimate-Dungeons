@@ -1,20 +1,10 @@
-const CACHE_NAME = "ultimate-dungeons-v1";
-
-function getBasePath() {
-  const path = self.location.pathname;
-  if (path.endsWith("/sw.js")) {
-    return path.slice(0, -"sw.js".length);
-  }
-  return path.endsWith("/") ? path : `${path}/`;
-}
+const CACHE_NAME = "ultimate-dungeons-v2";
+const BASE = self.location.pathname.replace(/sw\.js$/, "");
 
 const APP_SHELL = [
   "index.html",
   "manifest.json",
-  "game/index.html",
-  "game/js/loader.js",
-  "game/js/custom.js",
-].map((entry) => `${getBasePath()}${entry}`);
+].map((entry) => `${BASE}${entry}`);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -34,7 +24,6 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-
   if (request.method !== "GET") return;
 
   event.respondWith(

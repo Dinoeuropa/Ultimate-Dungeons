@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { GameSnapshot } from "@/game/types";
 import { AchievementsPanel } from "@/components/AchievementsPanel";
-import { GameCanvas } from "@/components/GameCanvas";
 import { HighScoresPanel } from "@/components/HighScoresPanel";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { MainMenu } from "@/components/MainMenu";
 import { MobileHUD } from "@/components/MobileHUD";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { SplashScreen } from "@/components/SplashScreen";
-import { withBasePath } from "@/lib/paths";
+import { StandaloneGame } from "@/components/StandaloneGame";
 import {
   addHighScore,
   clearSave,
@@ -23,7 +23,7 @@ import {
   saveRun,
   saveSettings,
 } from "@/lib/storage";
-import { difficultyToValue, GameStatePayload, SaveData } from "@/lib/types";
+import { SaveData } from "@/lib/types";
 
 type Screen =
   | "splash"
@@ -31,7 +31,8 @@ type Screen =
   | "game"
   | "highscores"
   | "achievements"
-  | "settings";
+  | "settings"
+  | "gameover";
 
 export function GameApp() {
   const [screen, setScreen] = useState<Screen>("splash");
@@ -40,11 +41,14 @@ export function GameApp() {
   const [highScores, setHighScores] = useState<number[]>([]);
   const [achievements, setAchievements] = useState(getAchievements());
   const [saveData, setSaveData] = useState<SaveData | null>(null);
-  const [gameState, setGameState] = useState<GameStatePayload | null>(null);
+  const [gameState, setGameState] = useState<GameSnapshot | null>(null);
   const [sessionBest, setSessionBest] = useState(0);
+  const [dailySeed, setDailySeed] = useState<number | undefined>(undefined);
+  const [continueRun, setContinueRun] = useState<SaveData | null>(null);
+  const [finalScore, setFinalScore] = useState(0);
   const [showPortraitWarning, setShowPortraitWarning] = useState(false);
 
-  const dailySeed = useMemo(() => getDailySeed(), []);
+  const dailySeedLabel = useMemo(() => getDailySeed(), []);
 
   useEffect(() => {
     setHighScores(getHighScores());
@@ -52,7 +56,9 @@ export function GameApp() {
     setAchievements(getAchievements());
 
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register(withBasePath("/sw.js")).catch(() => undefined);
+      navigator.serviceWorker.register(
+        `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/sw.js`,
+      ).catch(() => undefined);
     }
   }, []);
 
@@ -86,31 +92,54 @@ export function GameApp() {
         hp: gameState.hp,
         stamina: gameState.stamina,
         savedAt: new Date().toISOString(),
-        dailySeed,
+        dailySeed: dailySeedLabel,
       };
       saveRun(nextSave);
       setSaveData(nextSave);
     }
-  }, [dailySeed, gameState, sessionBest]);
+  }, [dailySeedLabel, gameState, sessionBest]);
 
-  const finishSession = () => {
-    if (sessionBest > 0) {
-      addHighScore(sessionBest);
+  const finishSession = (score?: number) => {
+    const best = score ?? sessionBest;
+    if (best > 0) {
+      addHighScore(best);
       setHighScores(getHighScores());
     }
     setSessionBest(0);
     setPaused(false);
+    setContinueRun(null);
+    setDailySeed(undefined);
     setScreen("menu");
+  };
+
+  const handleGameOver = (score: number) => {
+    setFinalScore(score);
+    addHighScore(score);
+    setHighScores(getHighScores());
+    clearSave();
+    setSaveData(null);
+    setScreen("gameover");
   };
 
   const startGame = (mode: "new" | "continue" | "daily") => {
     if (mode === "new") {
       clearSave();
       setSaveData(null);
-    }
-    if (mode === "daily") {
+      setContinueRun(null);
+      setDailySeed(undefined);
+    } else if (mode === "continue" && saveData) {
+      setContinueRun(saveData);
+      setDailySeed(undefined);
+    } else if (mode === "daily") {
       markDailyRunPlayed();
       setAchievements(getAchievements());
+      const seed = Array.from(getDailySeed()).reduce(
+        (acc, ch) => acc + ch.charCodeAt(0),
+        0,
+      );
+      setDailySeed(seed);
+      setContinueRun(null);
+      clearSave();
     }
     setSessionBest(0);
     setPaused(false);
@@ -123,7 +152,7 @@ export function GameApp() {
 
       {showPortraitWarning && screen === "game" && (
         <div className="orientation-warning">
-          Rotate to landscape for the best dungeon crawling experience.
+          Rotate to landscape for the best dungeon experience.
         </div>
       )}
 
@@ -135,13 +164,13 @@ export function GameApp() {
         <MainMenu
           highScore={highScores[0] ?? 0}
           saveData={saveData}
-          dailySeed={dailySeed}
+          dailySeed={dailySeedLabel}
           onPlay={() => startGame("new")}
           onContinue={() => startGame("continue")}
           onDailyRun={() => startGame("daily")}
           onTutorial={() => {
             alert(
-              "Controls:\n• D-pad: Move\n• Melee: Close combat\n• Ranged: Projectile (uses stamina)\n• Block: Block ranged attacks and minions\n\nDefeat all ghosts to unlock the exit door.",
+              "Ultimate Dungeons — Controls\n\n• D-pad: Move through procedurally generated floors\n• Melee: Powerful close-range slash (uses stamina)\n• Ranged: Fire a bolt in your facing direction\n• Block: Shield against ghost attacks and projectiles\n\nDefeat all spirits to unlock the exit door. Bosses await on floors 12, 23, and 34.",
             );
           }}
           onHighScores={() => setScreen("highscores")}
@@ -151,10 +180,7 @@ export function GameApp() {
       )}
 
       {screen === "highscores" && (
-        <HighScoresPanel
-          scores={highScores}
-          onClose={() => setScreen("menu")}
-        />
+        <HighScoresPanel scores={highScores} onClose={() => setScreen("menu")} />
       )}
 
       {screen === "achievements" && (
@@ -175,6 +201,19 @@ export function GameApp() {
         />
       )}
 
+      {screen === "gameover" && (
+        <div className="overlay-panel">
+          <div className="overlay-panel__content gameover-panel">
+            <p className="main-menu__eyebrow">Run Complete</p>
+            <h2>Game Over</h2>
+            <p className="gameover-score">{finalScore.toLocaleString()} points</p>
+            <button type="button" className="primary-btn" onClick={() => setScreen("menu")}>
+              Return to Menu
+            </button>
+          </div>
+        </div>
+      )}
+
       {screen === "game" && (
         <>
           <MobileHUD
@@ -186,16 +225,23 @@ export function GameApp() {
             maxHp={gameState?.maxHp}
             stamina={gameState?.stamina}
             maxStamina={gameState?.maxStamina}
+            timeBonus={gameState?.timeBonus}
+            enemyCount={gameState?.enemyCount}
+            bossName={gameState?.bossName}
+            bossHp={gameState?.bossHp}
+            bossMaxHp={gameState?.bossMaxHp}
             onPause={() => setPaused(true)}
           />
-          <GameCanvas
+          <StandaloneGame
             active
             paused={paused}
-            difficultyValue={difficultyToValue(settings.difficulty)}
+            dailySeed={dailySeed}
+            continueRun={continueRun}
             onReady={() => undefined}
             onStateChange={setGameState}
+            onGameOver={handleGameOver}
             onResume={() => setPaused(false)}
-            onQuit={finishSession}
+            onQuit={() => finishSession()}
           />
         </>
       )}

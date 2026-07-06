@@ -1,37 +1,41 @@
 # Ultimate Dungeons
 
-A retro arcade dungeon crawler built with Microsoft MakeCode Arcade, wrapped in a mobile-first Progressive Web App.
+A standalone retro dungeon crawler built with **Phaser 3** and **Next.js**, designed for mobile browsers and installable as a PWA.
+
+## What's New (Standalone Rewrite)
+
+The game no longer depends on MakeCode Arcade. It runs as a native web game engine with:
+
+- **Procedural dungeon generation** — A* path carving through randomized floor layouts (faithful to the original algorithm)
+- **Upgraded combat** — melee slash FX, ranged bolts, block shield, floating damage numbers, screen shake
+- **Modern mobile UI** — redesigned HUD with boss health bar, spirit counter, time bonus, and touch controls
+- **Boss floors** — Crab King (12), Basilisk (23), Dinosaur (34)
+- **Progression** — high scores, achievements, save/resume, daily seeded runs
 
 ## Project Structure
 
 ```
-├── game/          # MakeCode Arcade source and compiled web build
-├── mobile/        # Next.js mobile app shell (PWA)
-├── docs/          # Design and deployment notes
-└── README.md
+game/          # Original MakeCode source (archived reference)
+mobile/        # Standalone Phaser 3 game + PWA shell (deploy this)
+  src/game/    # Game engine, dungeon generator, combat, scenes
+docs/          # Deployment guides
 ```
 
-## Play on iPhone / Mobile
+## Play on iPhone
 
-**Do not use `localhost` on your phone** — that only works on the same machine running the dev server.
+Deploy to Vercel or GitHub Pages — **do not use localhost on your phone**.
 
-### Option A: GitHub Pages (free)
+### GitHub Pages
 
-After enabling GitHub Pages in repo settings (**Settings → Pages → Source: GitHub Actions**), the game will be at:
+1. Enable **Settings → Pages → Source: GitHub Actions**
+2. Open **https://dinoeuropa.github.io/Ultimate-Dungeons/**
+3. Safari → Share → **Add to Home Screen**
 
-**https://dinoeuropa.github.io/Ultimate-Dungeons/**
+### Vercel
 
-In Safari: Share → **Add to Home Screen** to install the PWA.
+Import the repo with root directory `.` — `vercel.json` builds `mobile/` automatically.
 
-### Option B: Vercel
-
-1. Import this repo at [vercel.com](https://vercel.com)
-2. Leave root directory as **`.`** (repo root) — `vercel.json` builds `mobile/` automatically
-3. Deploy and open the Vercel URL on your phone
-
-## Play Locally (development)
-
-### Mobile App (recommended)
+## Local Development
 
 ```bash
 cd mobile
@@ -39,41 +43,26 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000 on your phone or desktop browser.
+Open the forwarded URL or `http://localhost:3000` on the same machine running the dev server.
 
-### Game Only
+## Game Controls
 
-Open `game/assets/index.html` in a browser, or serve the `game/assets/` folder statically.
+| Input | Action |
+|-------|--------|
+| D-pad | Move |
+| Melee | Close-range slash (50 damage, 60 stamina) |
+| Ranged | Directional bolt (20 damage, 15 stamina) |
+| Block | Shield against spirit attacks |
 
-## Editing the Game
+Defeat all spirits to unlock the exit door. Pick up hearts for +35 HP.
 
-1. Open [MakeCode Arcade](https://arcade.makecode.com/)
-2. Import URL: `https://github.com/Dinoeuropa/Ultimate-Dungeons` (game folder)
-3. Edit blocks or add TypeScript in `mobileBridge.ts`
-4. Export to GitHub or download and copy updated `assets/js/binary.js`
+## Tech Stack
 
-Game logic lives in `game/main.blocks` / `game/main.ts`. Prefer the blocks editor for gameplay changes; use `game/mobileBridge.ts` for mobile shell integration.
-
-## Mobile Features
-
-- Custom virtual D-pad and action buttons (Melee, Ranged, Block)
-- Landscape-first layout with safe-area support
-- Installable PWA with offline caching
-- High scores, achievements, save/resume, and daily run seed
-- Difficulty modes (Easy / Normal / Hard)
-- Optional Capacitor native packaging for iOS/Android
-
-## Deploy
-
-The mobile app is configured for static export and Vercel deployment:
-
-```bash
-cd mobile
-npm run build
-```
-
-See [docs/deployment.md](docs/deployment.md) for CI and store packaging details.
+- **Phaser 3** — game rendering, combat, entities
+- **Next.js 15** — app shell, menus, PWA
+- **TypeScript** — game logic and UI
+- **Capacitor** (optional) — native iOS/Android packaging
 
 ## Original Game
 
-Based on [ultimate-dungeons-](https://github.com/Dinoeuropa/ultimate-dungeons-) by Dinoeuropa.
+The MakeCode Arcade source is preserved in `game/` for reference.

@@ -136,6 +136,7 @@ button {
   font-size: clamp(1rem, 4vw, 1.5rem);
   line-height: 1.5;
   margin: 0.75rem 0;
+  text-shadow: 0 0 18px rgba(155, 89, 217, 0.45);
 }
 
 .splash-screen p,
@@ -167,8 +168,24 @@ button {
 
 .game-shell {
   inset: 0;
-  padding-top: calc(3rem + var(--safe-top));
+  padding-top: calc(3.5rem + var(--safe-top));
   position: fixed;
+}
+
+.game-shell--standalone {
+  background:
+    radial-gradient(circle at 50% 20%, rgba(107, 63, 160, 0.18), transparent 45%),
+    #0b0612;
+}
+
+.phaser-root,
+.phaser-root canvas {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.phaser-root canvas {
+  image-rendering: pixelated;
 }
 
 .game-frame {
@@ -213,9 +230,10 @@ button {
 
 .mobile-hud {
   align-items: center;
-  background: linear-gradient(180deg, rgba(11, 6, 18, 0.92), rgba(11, 6, 18, 0.55));
-  display: flex;
-  gap: 0.75rem;
+  background: linear-gradient(180deg, rgba(11, 6, 18, 0.95), rgba(11, 6, 18, 0.55));
+  display: grid;
+  gap: 0.35rem 0.75rem;
+  grid-template-columns: auto 1fr auto;
   left: 0;
   padding:
     calc(0.5rem + var(--safe-top))
@@ -226,6 +244,69 @@ button {
   right: 0;
   top: 0;
   z-index: 20;
+}
+
+.mobile-hud--upgraded {
+  border-bottom: 1px solid rgba(155, 89, 217, 0.25);
+}
+
+.mobile-hud__cluster {
+  display: flex;
+  flex-wrap: wrap;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  gap: 0.35rem 0.75rem;
+}
+
+.mobile-hud__stat--muted {
+  color: var(--muted);
+}
+
+.mobile-hud__stat--gold {
+  color: var(--gold);
+}
+
+.mobile-hud__meters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  grid-column: 2;
+}
+
+.mobile-hud__score {
+  color: var(--gold);
+  font-size: 0.65rem;
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  text-align: right;
+}
+
+.boss-bar {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.boss-bar span {
+  color: #ff8a80;
+  font-size: 0.5rem;
+  min-width: 4.5rem;
+}
+
+.meter--boss i {
+  background: linear-gradient(90deg, #c0392b, #f39c12);
+}
+
+.gameover-panel {
+  text-align: center;
+}
+
+.gameover-score {
+  color: var(--gold);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.5rem;
+  margin: 1rem 0;
 }
 
 .mobile-hud__pause,

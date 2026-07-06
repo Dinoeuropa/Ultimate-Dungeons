@@ -9,6 +9,11 @@ type MobileHUDProps = {
   maxHp?: number;
   stamina?: number;
   maxStamina?: number;
+  timeBonus?: number;
+  enemyCount?: number;
+  bossName?: string | null;
+  bossHp?: number | null;
+  bossMaxHp?: number | null;
   onPause: () => void;
 };
 
@@ -26,29 +31,56 @@ export function MobileHUD({
   maxHp,
   stamina,
   maxStamina,
+  timeBonus = 0,
+  enemyCount = 0,
+  bossName,
+  bossHp,
+  bossMaxHp,
   onPause,
 }: MobileHUDProps) {
   if (!visible) return null;
 
   return (
-    <header className="mobile-hud">
+    <header className="mobile-hud mobile-hud--upgraded">
       <button type="button" className="mobile-hud__pause" onClick={onPause}>
         {paused ? "Paused" : "Pause"}
       </button>
-      <div className="mobile-hud__stat">Floor {floor}</div>
-      <div className="mobile-hud__meter" aria-label="Health">
-        <span>HP</span>
-        <div className="meter">
-          <i style={{ width: `${pct(hp, maxHp)}%` }} />
+
+      <div className="mobile-hud__cluster">
+        <div className="mobile-hud__stat">Floor {floor}</div>
+        <div className="mobile-hud__stat mobile-hud__stat--muted">
+          Spirits {enemyCount}
+        </div>
+        <div className="mobile-hud__stat mobile-hud__stat--gold">
+          Bonus {timeBonus}
         </div>
       </div>
-      <div className="mobile-hud__meter" aria-label="Stamina">
-        <span>ST</span>
-        <div className="meter meter--stamina">
-          <i style={{ width: `${pct(stamina, maxStamina)}%` }} />
+
+      <div className="mobile-hud__meters">
+        <div className="mobile-hud__meter" aria-label="Health">
+          <span>HP</span>
+          <div className="meter">
+            <i style={{ width: `${pct(hp, maxHp)}%` }} />
+          </div>
+        </div>
+        <div className="mobile-hud__meter" aria-label="Stamina">
+          <span>ST</span>
+          <div className="meter meter--stamina">
+            <i style={{ width: `${pct(stamina, maxStamina)}%` }} />
+          </div>
         </div>
       </div>
-      <div className="mobile-hud__score">{score.toLocaleString()} pts</div>
+
+      <div className="mobile-hud__score">{score.toLocaleString()}</div>
+
+      {bossName && bossHp != null && bossMaxHp != null && (
+        <div className="boss-bar">
+          <span>{bossName}</span>
+          <div className="meter meter--boss">
+            <i style={{ width: `${pct(bossHp, bossMaxHp)}%` }} />
+          </div>
+        </div>
+      )}
     </header>
   );
 }
