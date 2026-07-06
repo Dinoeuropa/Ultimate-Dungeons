@@ -1,11 +1,20 @@
 const CACHE_NAME = "ultimate-dungeons-v1";
+
+function getBasePath() {
+  const path = self.location.pathname;
+  if (path.endsWith("/sw.js")) {
+    return path.slice(0, -"sw.js".length);
+  }
+  return path.endsWith("/") ? path : `${path}/`;
+}
+
 const APP_SHELL = [
-  "/",
-  "/manifest.json",
-  "/game/index.html",
-  "/game/js/loader.js",
-  "/game/js/custom.js",
-];
+  "index.html",
+  "manifest.json",
+  "game/index.html",
+  "game/js/loader.js",
+  "game/js/custom.js",
+].map((entry) => `${getBasePath()}${entry}`);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

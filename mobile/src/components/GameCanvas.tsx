@@ -7,6 +7,7 @@ import {
   postToGameFrame,
   triggerCapacitorHaptic,
 } from "@/lib/game-bridge";
+import { withBasePath } from "@/lib/paths";
 import { GameStatePayload } from "@/lib/types";
 import { ActionButtons } from "./ActionButtons";
 import { PauseMenu } from "./PauseMenu";
@@ -116,7 +117,7 @@ export function GameCanvas({
 
       <iframe
         ref={frameRef}
-        src="/game/index.html"
+        src={withBasePath("/game/index.html")}
         title="Ultimate Dungeons"
         className="game-frame"
         allow="fullscreen"

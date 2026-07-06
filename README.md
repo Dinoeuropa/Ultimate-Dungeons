@@ -11,7 +11,25 @@ A retro arcade dungeon crawler built with Microsoft MakeCode Arcade, wrapped in 
 └── README.md
 ```
 
-## Play Locally
+## Play on iPhone / Mobile
+
+**Do not use `localhost` on your phone** — that only works on the same machine running the dev server.
+
+### Option A: GitHub Pages (free)
+
+After enabling GitHub Pages in repo settings (**Settings → Pages → Source: GitHub Actions**), the game will be at:
+
+**https://dinoeuropa.github.io/Ultimate-Dungeons/**
+
+In Safari: Share → **Add to Home Screen** to install the PWA.
+
+### Option B: Vercel
+
+1. Import this repo at [vercel.com](https://vercel.com)
+2. Leave root directory as **`.`** (repo root) — `vercel.json` builds `mobile/` automatically
+3. Deploy and open the Vercel URL on your phone
+
+## Play Locally (development)
 
 ### Mobile App (recommended)
 

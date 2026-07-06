@@ -9,7 +9,7 @@ import { MainMenu } from "@/components/MainMenu";
 import { MobileHUD } from "@/components/MobileHUD";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { SplashScreen } from "@/components/SplashScreen";
-import { difficultyToValue } from "@/lib/types";
+import { withBasePath } from "@/lib/paths";
 import {
   addHighScore,
   clearSave,
@@ -23,7 +23,7 @@ import {
   saveRun,
   saveSettings,
 } from "@/lib/storage";
-import { GameStatePayload, SaveData } from "@/lib/types";
+import { difficultyToValue, GameStatePayload, SaveData } from "@/lib/types";
 
 type Screen =
   | "splash"
@@ -52,7 +52,7 @@ export function GameApp() {
     setAchievements(getAchievements());
 
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+      navigator.serviceWorker.register(withBasePath("/sw.js")).catch(() => undefined);
     }
   }, []);
 
