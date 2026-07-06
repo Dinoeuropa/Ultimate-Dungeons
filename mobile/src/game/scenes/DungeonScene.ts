@@ -112,6 +112,7 @@ export class DungeonScene extends Phaser.Scene {
   private fxLayer!: Phaser.GameObjects.Container;
   private worldLayer!: Phaser.GameObjects.Container;
   private nextEnemyId = 1;
+  private snapshotTimer = 0;
 
   constructor() {
     super("DungeonScene");
@@ -286,12 +287,13 @@ export class DungeonScene extends Phaser.Scene {
     const px = spawn.x * TILE_SIZE + TILE_SIZE / 2;
     const py = spawn.y * TILE_SIZE + TILE_SIZE / 2;
 
-    this.playerGlow = this.add.circle(0, 0, 10, COLORS.player, 0.25);
-    this.playerBody = this.add.circle(0, 0, 7, COLORS.player);
-    this.playerBody.setStrokeStyle(2, 0xffffff, 0.8);
-    const visor = this.add.rectangle(0, -2, 6, 3, 0xffffff, 0.9);
+    this.playerGlow = this.add.circle(0, 0, 10, COLORS.player, 0.35);
+    this.playerBody = this.add.circle(0, 0, 8, COLORS.player);
+    this.playerBody.setStrokeStyle(2, 0xffffff, 0.9);
+    const visor = this.add.rectangle(0, -2, 7, 4, 0xffffff, 1);
 
     this.player = this.add.container(px, py, [this.playerGlow, this.playerBody, visor]);
+    this.player.setDepth(10);
     this.worldLayer.add(this.player);
   }
 
@@ -342,6 +344,7 @@ export class DungeonScene extends Phaser.Scene {
     const body = this.add.circle(0, 0, radius, color);
     body.setStrokeStyle(2, 0xffffff, 0.35);
     const container = this.add.container(x, y, [glow, body]);
+    container.setDepth(8);
     this.worldLayer.add(container);
 
     return {
@@ -365,8 +368,13 @@ export class DungeonScene extends Phaser.Scene {
     this.updatePlayer(delta);
     this.updateEnemies(delta);
     this.updateProjectiles(delta);
+    this.collectPickups();
     this.checkDoor();
-    this.emitSnapshot();
+    this.snapshotTimer += delta;
+    if (this.snapshotTimer >= 200) {
+      this.snapshotTimer = 0;
+      this.emitSnapshot();
+    }
   }
 
   private updateTimers(delta: number) {
@@ -424,13 +432,12 @@ export class DungeonScene extends Phaser.Scene {
 
     this.handleCombat();
 
-    this.playerGlow.setPosition(this.player.x, this.player.y);
-    this.shield.setPosition(this.player.x, this.player.y);
     if (this.invulnTimer > 0) {
       this.player.setAlpha(0.5 + Math.sin(Date.now() / 80) * 0.3);
     } else {
       this.player.setAlpha(1);
     }
+    this.shield.setPosition(this.player.x, this.player.y);
   }
 
   private handleCombat() {
@@ -631,7 +638,7 @@ export class DungeonScene extends Phaser.Scene {
       this.enemies = this.enemies.filter((e) => e !== enemy);
 
       if (this.enemyCount === 0) {
-        this.setTile(this.dungeon.door.x, this.dungeon.door.y, TILE.DOOR_OPEN);
+        // Door opening handled in checkDoor()
       }
     }
   }
@@ -655,19 +662,29 @@ export class DungeonScene extends Phaser.Scene {
 
   private checkDoor() {
     if (this.enemyCount > 0) return;
-    const grid = this.worldToGrid(this.player.x, this.player.y);
-    if (
-      grid.x === this.dungeon.door.x &&
-      grid.y === this.dungeon.door.y &&
-      this.dungeon.tiles[grid.y][grid.x] === TILE.DOOR_OPEN
-    ) {
-      this.score += this.timeBonus;
-      this.callbacks.onFloorComplete(this.floor, this.score);
-      this.floor += 1;
-      this.carryHp = true;
-      this.startFloor();
+
+    // Open exit once all enemies are defeated.
+    if (this.dungeon.tiles[this.dungeon.door.y][this.dungeon.door.x] === TILE.DOOR_CLOSED) {
+      this.setTile(this.dungeon.door.x, this.dungeon.door.y, TILE.DOOR_OPEN);
+      return;
     }
 
+    const grid = this.worldToGrid(this.player.x, this.player.y);
+    const onDoor =
+      grid.x === this.dungeon.door.x &&
+      grid.y === this.dungeon.door.y &&
+      this.dungeon.tiles[grid.y][grid.x] === TILE.DOOR_OPEN;
+
+    if (!onDoor) return;
+
+    this.score += this.timeBonus;
+    this.callbacks.onFloorComplete(this.floor, this.score);
+    this.floor += 1;
+    this.carryHp = true;
+    this.startFloor();
+  }
+
+  private collectPickups() {
     for (const pickup of [...this.pickups]) {
       const dist = Phaser.Math.Distance.Between(
         this.player.x,

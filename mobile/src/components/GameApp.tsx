@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GameSnapshot } from "@/game/types";
 import { AchievementsPanel } from "@/components/AchievementsPanel";
 import { HighScoresPanel } from "@/components/HighScoresPanel";
@@ -42,6 +42,12 @@ export function GameApp() {
   const [achievements, setAchievements] = useState(getAchievements());
   const [saveData, setSaveData] = useState<SaveData | null>(null);
   const [gameState, setGameState] = useState<GameSnapshot | null>(null);
+  const gameStateRef = useRef<GameSnapshot | null>(null);
+
+  const handleStateChange = useCallback((snapshot: GameSnapshot) => {
+    gameStateRef.current = snapshot;
+    setGameState(snapshot);
+  }, []);
   const [sessionBest, setSessionBest] = useState(0);
   const [dailySeed, setDailySeed] = useState<number | undefined>(undefined);
   const [continueRun, setContinueRun] = useState<SaveData | null>(null);
@@ -238,7 +244,7 @@ export function GameApp() {
             dailySeed={dailySeed}
             continueRun={continueRun}
             onReady={() => undefined}
-            onStateChange={setGameState}
+            onStateChange={handleStateChange}
             onGameOver={handleGameOver}
             onResume={() => setPaused(false)}
             onQuit={() => finishSession()}

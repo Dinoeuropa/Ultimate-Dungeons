@@ -33,24 +33,41 @@ export function PhaserGame({
 }: PhaserGameProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
+  const callbacksRef = useRef(callbacks);
+  callbacksRef.current = callbacks;
+
+  const continueFloor = continueRun?.floor ?? 1;
+  const continueScore = continueRun?.score ?? 0;
+  const continueHp = continueRun?.hp;
+  const continueStamina = continueRun?.stamina;
+  const hasContinue = !!continueRun;
 
   useEffect(() => {
     if (!active || !containerRef.current || gameRef.current) return;
 
-    gameRef.current = createPhaserGame(containerRef.current, callbacks, {
-      floor: continueRun?.floor ?? 1,
-      score: continueRun?.score ?? 0,
-      hp: continueRun?.hp,
-      stamina: continueRun?.stamina,
+    const stableCallbacks: GameCallbacks = {
+      onSnapshot: (snapshot) => callbacksRef.current.onSnapshot(snapshot),
+      onGameOver: (score) => callbacksRef.current.onGameOver(score),
+      onFloorComplete: (floor, score) =>
+        callbacksRef.current.onFloorComplete(floor, score),
+    };
+
+    gameRef.current = createPhaserGame(containerRef.current, stableCallbacks, {
+      floor: continueFloor,
+      score: continueScore,
+      hp: continueHp,
+      stamina: continueStamina,
       dailySeed,
-      carryHp: !!continueRun,
+      carryHp: hasContinue,
     });
 
     return () => {
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, [active, callbacks, continueRun, dailySeed]);
+    // Only remount when starting a new session — NOT when HUD/callbacks update.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, dailySeed, continueFloor, continueScore, continueHp, continueStamina, hasContinue]);
 
   useEffect(() => {
     const scene = gameRef.current ? getDungeonScene(gameRef.current) : null;

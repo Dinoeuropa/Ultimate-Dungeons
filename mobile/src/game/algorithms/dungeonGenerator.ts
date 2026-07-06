@@ -42,6 +42,10 @@ function placeDoor(tiles: TileType[][]): GridPos {
   } else {
     door = { x: 1 + Math.floor(Math.random() * 10), y: 5 + Math.floor(Math.random() * 11) };
   }
+  // Never place door on player spawn column/row.
+  if (Math.abs(door.x - 12) < 2 && Math.abs(door.y - 22) < 2) {
+    door = { x: 20, y: 5 };
+  }
   tiles[door.y][door.x] = TILE.DOOR_CLOSED;
   return door;
 }
@@ -126,22 +130,45 @@ export function generateDungeon(seed?: number): DungeonData {
 
   const ghostCount = 2 + Math.floor(Math.random() * 3);
   const enemySpawns: GridPos[] = [];
+  const used = new Set<string>();
+
   for (let i = 0; i < ghostCount; i++) {
     let attempts = 0;
-    while (attempts < 50) {
+    while (attempts < 80) {
       const x = 3 + Math.floor(Math.random() * (MAP_SIZE - 6));
       const y = 3 + Math.floor(Math.random() * (MAP_SIZE - 6));
-      if (tiles[y][x] === TILE.CARVED) {
-        const tooClose = enemySpawns.some(
-          (s) => Math.abs(s.x - x) + Math.abs(s.y - y) < 4,
-        );
-        const farFromSpawn = Math.abs(spawn.x - x) + Math.abs(spawn.y - y) > 6;
-        if (!tooClose && farFromSpawn) {
-          enemySpawns.push({ x, y });
-          break;
-        }
+      const key = `${x},${y}`;
+      if (tiles[y][x] !== TILE.CARVED || used.has(key)) {
+        attempts++;
+        continue;
+      }
+      const tooCloseToSpawn =
+        Math.abs(spawn.x - x) + Math.abs(spawn.y - y) < 6;
+      const tooCloseToDoor =
+        Math.abs(door.x - x) + Math.abs(door.y - y) < 4;
+      const tooCloseToOther = enemySpawns.some(
+        (s) => Math.abs(s.x - x) + Math.abs(s.y - y) < 4,
+      );
+      if (!tooCloseToSpawn && !tooCloseToDoor && !tooCloseToOther) {
+        enemySpawns.push({ x, y });
+        used.add(key);
+        break;
       }
       attempts++;
+    }
+  }
+
+  // Guarantee at least two enemies on carved tiles.
+  if (enemySpawns.length < 2) {
+    for (let y = 1; y < MAP_SIZE - 1; y++) {
+      for (let x = 1; x < MAP_SIZE - 1; x++) {
+        if (enemySpawns.length >= 2) break;
+        const key = `${x},${y}`;
+        if (tiles[y][x] === TILE.CARVED && !used.has(key)) {
+          enemySpawns.push({ x, y });
+          used.add(key);
+        }
+      }
     }
   }
 

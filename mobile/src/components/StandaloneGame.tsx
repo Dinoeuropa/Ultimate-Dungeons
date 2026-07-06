@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PhaserGame } from "@/game/PhaserGame";
 import { GameCallbacks } from "@/game/scenes/DungeonScene";
 import { ControlButton, triggerCapacitorHaptic } from "@/lib/game-bridge";
@@ -40,17 +40,27 @@ export function StandaloneGame({
   const [controls, setControls] = useState<ControlState>(EMPTY_CONTROLS);
   const readyRef = useRef(false);
 
-  const callbacks: GameCallbacks = {
-    onSnapshot: (snapshot) => {
-      if (!readyRef.current && snapshot.inGame) {
-        readyRef.current = true;
-        onReady();
-      }
-      onStateChange(snapshot);
-    },
-    onGameOver: (score) => onGameOver(score),
-    onFloorComplete: () => undefined,
-  };
+  const onReadyRef = useRef(onReady);
+  const onStateChangeRef = useRef(onStateChange);
+  const onGameOverRef = useRef(onGameOver);
+  onReadyRef.current = onReady;
+  onStateChangeRef.current = onStateChange;
+  onGameOverRef.current = onGameOver;
+
+  const callbacks = useMemo<GameCallbacks>(
+    () => ({
+      onSnapshot: (snapshot) => {
+        if (!readyRef.current && snapshot.inGame) {
+          readyRef.current = true;
+          onReadyRef.current();
+        }
+        onStateChangeRef.current(snapshot);
+      },
+      onGameOver: (score) => onGameOverRef.current(score),
+      onFloorComplete: () => undefined,
+    }),
+    [],
+  );
 
   const setDirection = useCallback((button: ControlButton, pressed: boolean) => {
     if (paused) return;
